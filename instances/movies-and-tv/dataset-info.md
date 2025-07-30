@@ -134,58 +134,83 @@ Several Harry Potter actors have appeared in the TV shows included in this datab
 
 ## Sample Queries for Movies and TV Shows
 
-### Harry Potter movies
+### Harry Potter Movies
+
+**Find all Harry Potter movies in chronological order:**
 
 ```cypher
-// Find all Harry Potter movies in chronological order
 MATCH (movie:Movie)
 WHERE movie.title CONTAINS "Harry Potter"
 RETURN movie.title, movie.released, movie.runtime, movie.tagline
 ORDER BY movie.released;
+```
 
-// Find all actors who appeared in Harry Potter movies
+**Find all actors who appeared in Harry Potter movies:**
+
+```cypher
 MATCH (person:Person)-[:ACTED_IN]->(movie:Movie)
 WHERE movie.title CONTAINS "Harry Potter"
 RETURN person.name, person.born, collect(movie.title) as movies
 ORDER BY person.name;
+```
 
-// Find Daniel Radcliffe's filmography (within this database)
+**Find Daniel Radcliffe's filmography:**
+
+```cypher
 MATCH (daniel:Person {name: "Daniel Radcliffe"})-[:ACTED_IN]->(movie:Movie)
 RETURN daniel.name, movie.title, movie.released
 ORDER BY movie.released;
+```
 
-// Find directors and how many Harry Potter films they directed
+**Find directors and how many Harry Potter films they directed:**
+
+```cypher
 MATCH (director:Person)-[:DIRECTED]->(movie:Movie)
 WHERE movie.title CONTAINS "Harry Potter"
 RETURN director.name, count(movie) as films_directed, collect(movie.title) as films
 ORDER BY films_directed DESC;
+```
 
-// Find movies by David Yates (most prolific HP director)
+**Find movies by David Yates (most prolific HP director):**
+
+```cypher
 MATCH (david:Person {name: "David Yates"})-[:DIRECTED]->(movie:Movie)
 RETURN movie.title, movie.released
 ORDER BY movie.released;
+```
 
-// Find the longest and shortest Harry Potter films
+**Find the longest and shortest Harry Potter films:**
+
+```cypher
 MATCH (movie:Movie)
 WHERE movie.title CONTAINS "Harry Potter"
 RETURN movie.title, movie.runtime
 ORDER BY movie.runtime DESC;
+```
 
-// Find actors who were in multiple Harry Potter films
+**Find actors who were in multiple Harry Potter films:**
+
+```cypher
 MATCH (person:Person)-[:ACTED_IN]->(movie:Movie)
 WHERE movie.title CONTAINS "Harry Potter"
 WITH person, count(movie) as film_count, collect(movie.title) as films
 WHERE film_count > 1
 RETURN person.name, film_count, films
 ORDER BY film_count DESC;
+```
 
-// Find the main trio (Harry, Ron, Hermione) and their filmography
+**Find the main trio and their filmography:**
+
+```cypher
 MATCH (person:Person)-[:ACTED_IN]->(movie:Movie)
 WHERE person.name IN ["Daniel Radcliffe", "Emma Watson", "Rupert Grint"]
 RETURN person.name, collect(movie.title) as films, count(movie) as film_count
 ORDER BY person.name;
+```
 
-// Find movies released in the 2000s vs 2010s
+**Find movies by decade:**
+
+```cypher
 MATCH (movie:Movie)
 WHERE movie.title CONTAINS "Harry Potter"
 RETURN
@@ -196,31 +221,46 @@ RETURN
   collect(movie.title) as movies,
   count(movie) as count
 ORDER BY decade;
+```
 
-// Find co-stars of Alan Rickman (Snape)
+**Find co-stars of Alan Rickman:**
+
+```cypher
 MATCH (alan:Person {name: "Alan Rickman"})-[:ACTED_IN]->(movie:Movie)<-[:ACTED_IN]-(costar:Person)
 WHERE alan <> costar
 RETURN DISTINCT costar.name, costar.born, collect(DISTINCT movie.title) as shared_movies
 ORDER BY costar.name;
+```
 
-// Find all Fantasy genre movies
+**Find all Fantasy genre movies:**
+
+```cypher
 MATCH (movie:Movie)
 WHERE "Fantasy" IN movie.genre
 RETURN movie.title, movie.released, movie.genre
 ORDER BY movie.released;
+```
 
-// Path between any two actors (example: Daniel Radcliffe to Alan Rickman)
+**Find shortest path between actors:**
+
+```cypher
 MATCH path = shortestPath((daniel:Person {name: "Daniel Radcliffe"})-[*..4]-(alan:Person {name: "Alan Rickman"}))
 RETURN path;
+```
 
-// Movies with their complete cast
+**Movies with their complete cast:**
+
+```cypher
 MATCH (movie:Movie)<-[:ACTED_IN]-(actor:Person)
 WHERE movie.title CONTAINS "Harry Potter"
 RETURN movie.title, movie.released, collect(actor.name) as cast
 ORDER BY movie.released
 LIMIT 3;
+```
 
-// Find movies directed by different directors
+**Find movies by director:**
+
+```cypher
 MATCH (movie:Movie)<-[:DIRECTED]-(director:Person)
 WHERE movie.title CONTAINS "Harry Potter"
 RETURN director.name, collect(movie.title) as directed_films
@@ -229,52 +269,72 @@ ORDER BY director.name;
 
 ### TV Shows
 
+**Find all TV shows with episode counts:**
+
 ```cypher
-// Find all TV shows with their episode counts
 MATCH (show:TVShow)
 RETURN show.title, show.startYear, show.endYear, show.seasons, show.episodes, show.genre
 ORDER BY show.episodes DESC;
+```
 
-// Find longest-running TV shows
+**Find longest-running TV shows:**
+
+```cypher
 MATCH (show:TVShow)
 WHERE show.endYear IS NOT NULL
 RETURN show.title, (show.endYear - show.startYear) as years_running, show.seasons
 ORDER BY years_running DESC;
+```
 
-// Find TV shows still airing
+**Find TV shows still airing:**
+
+```cypher
 MATCH (show:TVShow)
 WHERE show.endYear IS NULL
 RETURN show.title, show.startYear, show.seasons, show.episodes;
+```
 
-// Find TV shows by genre
+**Find TV shows by genre:**
+
+```cypher
 MATCH (show:TVShow)
 WHERE "Crime" IN show.genre
 RETURN show.title, show.genre, show.startYear
 ORDER BY show.startYear;
+```
 
-// Find co-stars in Breaking Bad
+**Find Breaking Bad cast:**
+
+```cypher
 MATCH (show:TVShow {title: "Breaking Bad"})<-[:STARRED_IN]-(actor:Person)
 RETURN actor.name, actor.born
 ORDER BY actor.born;
 ```
 
-### Cross media queries
+### Cross Media Queries
+
+**Find Harry Potter actors who also appeared in TV shows:**
 
 ```cypher
-// Find Harry Potter actors who also appeared in TV shows
 MATCH (person:Person)-[:ACTED_IN]->(movie:Movie)
 WHERE movie.title CONTAINS "Harry Potter"
 MATCH (person)-[:STARRED_IN]->(show:TVShow)
 RETURN person.name,
        collect(DISTINCT movie.title) as harry_potter_movies,
        collect(DISTINCT show.title) as tv_shows;
+```
 
-// Compare movies vs TV shows by count
+**Compare movies vs TV shows by count:**
+
+```cypher
 MATCH (content)
 WHERE content:Movie OR content:TVShow
 RETURN labels(content) as type, count(content) as count;
+```
 
-// Find all content from the 2000s
+**Find all content from the 2000s:**
+
+```cypher
 MATCH (content)
 WHERE (content:Movie AND content.released >= 2000 AND content.released < 2010)
    OR (content:TVShow AND content.startYear >= 2000 AND content.startYear < 2010)
@@ -284,29 +344,40 @@ RETURN labels(content) as type, content.title,
          ELSE content.startYear
        END as year
 ORDER BY year;
+```
 
-// Find creators and directors with their content
+**Find creators and directors with their content:**
+
+```cypher
 MATCH (person:Person)-[r:DIRECTED|CREATED]->(content)
 RETURN person.name, type(r) as relationship,
        collect(content.title) as content_created
 ORDER BY person.name;
+```
 
-// Path between a movie actor and TV actor
+**Path between movie and TV actors:**
+
+```cypher
 MATCH path = shortestPath((helena:Person {name: "Helena Bonham Carter"})-[*..6]-(bryan:Person {name: "Bryan Cranston"}))
 RETURN path;
+```
 
-// Most prolific actors (by number of projects across movies and TV)
+**Most prolific actors across movies and TV:**
+
+```cypher
 MATCH (person:Person)-[r:ACTED_IN|STARRED_IN]->(content)
 RETURN person.name, count(content) as projects,
        collect(content.title) as titles
 ORDER BY projects DESC
 LIMIT 10;
+```
 
-// Find Fantasy content across both movies and TV
+**Find Fantasy content across both movies and TV:**
+
+```cypher
 MATCH (content)
 WHERE (content:Movie AND "Fantasy" IN content.genre)
    OR (content:TVShow AND "Fantasy" IN content.genre)
 RETURN labels(content) as type, content.title, content.genre
 ORDER BY content.title;
-
 ```
